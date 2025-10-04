@@ -1,0 +1,52 @@
+{
+    "areas": [
+      {
+        "id": "western",
+        "name": "Western Pyrenees",
+        "massifs": [
+          {
+            "id": "anayet",
+            "name": "Anayet Massif",
+            "peaks": [
+              {
+                "id": "pico_anayet",
+                "name": "Pico Anayet",
+                "summit_elev_m": 2574,
+                "massif": "Anayet",
+                "province": "Huesca",
+                "bands": {
+                  "base": {"lat": 42.785, "lon": -0.445, "elev_m": 1800},
+                  "mid": {"lat": 42.785, "lon": -0.445, "elev_m": 2200},
+                  "summit": {"lat": 42.785, "lon": -0.445, "elev_m": 2574}
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "central",
+        "name": "Central Pyrenees",
+        "massifs": [
+          {
+            "id": "maladeta",
+            "name": "Maladeta Massif",
+            "peaks": [
+              {
+                "id": "aneto",
+                "name": "Aneto",
+                "summit_elev_m": 3404,
+                "massif": "Maladeta",
+                "province": "Huesca",
+                "bands": {
+                  "base": {"lat": 42.631, "lon": 0.656, "elev_m": 2200},
+                  "mid": {"lat": 42.631, "lon": 0.656, "elev_m": 2800},
+                  "summit": {"lat": 42.631, "lon": 0.656, "elev_m": 3404}
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
