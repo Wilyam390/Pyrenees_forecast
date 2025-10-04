@@ -3,48 +3,507 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link rel="stylesheet" href="/static/style.css">
   <title>Pyrenees Mountain Weather</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
-    h1 { margin-bottom: 8px; }
-    .row { display: flex; gap: 16px; flex-wrap: wrap; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; width: 340px; background: #fff; }
-    .band { display: inline-block; margin-right: 12px; cursor: pointer; }
-    .band.active { font-weight: 700; text-decoration: underline; }
-    .list { margin: 8px 0 0; padding: 0; list-style: none; }
-    .list li { margin: 4px 0; }
-    input, select, button { padding: 8px; margin-right: 6px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { border-bottom: 1px solid #eee; padding: 6px 4px; text-align: left; }
-    .muted { color: #666; font-size: 13px; }
-    .pill { display:inline-block; padding: 2px 6px; border-radius: 999px; background:#f2f2f2; font-size:12px; }
-    .error { color: #b00020; font-weight: 600; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    /* Header Section */
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 2rem 1rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      text-align: center;
+      color: #667eea;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .header .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Search Section - Centered */
+    .search-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+
+    .search-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .search-title::before {
+      content: "🔍";
+      font-size: 1.5rem;
+    }
+
+    /* Global Search */
+    .global-search {
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .search-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.875rem 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    button {
+      padding: 0.875rem 1.5rem;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    /* Browse by Hierarchy */
+    .browse-section {
+      margin-bottom: 1rem;
+    }
+
+    .browse-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #555;
+    }
+
+    .selector-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .selector-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .selector-label {
+      min-width: 80px;
+      font-weight: 500;
+      color: #666;
+      font-size: 0.95rem;
+    }
+
+    select {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    select:disabled {
+      background: #f5f5f5;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    /* Results List */
+    .results-list {
+      margin-top: 1rem;
+      padding-left: 1.5rem;
+    }
+
+    .results-list li {
+      list-style: none;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      background: #f8f9fa;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s;
+    }
+
+    .results-list li:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+
+    .peak-info {
+      flex: 1;
+    }
+
+    .peak-name {
+      font-weight: 600;
+      color: #333;
+      font-size: 1rem;
+    }
+
+    .peak-details {
+      color: #666;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    .results-list button {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
+
+    /* Main Content Container */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1rem 2rem;
+    }
+
+    /* My Mountains Section */
+    .my-mountains-section {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-header h2 {
+      font-size: 1.75rem;
+      color: #333;
+      font-weight: 700;
+    }
+
+    .section-header::before {
+      content: "⛰️";
+      font-size: 2rem;
+    }
+
+    /* Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: all 0.3s;
+      border: 1px solid #e0e0e0;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    .card-header {
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .card h3 {
+      color: #667eea;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-meta {
+      color: #666;
+      font-size: 0.875rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0.4rem 0.75rem;
+      border-radius: 20px;
+      background: #e3e8ff;
+      color: #667eea;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* Band Selector */
+    .band-selector {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      background: #f8f9fa;
+      padding: 0.5rem;
+      border-radius: 8px;
+    }
+
+    .band {
+      flex: 1;
+      padding: 0.625rem 1rem;
+      text-align: center;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+      background: transparent;
+      color: #666;
+    }
+
+    .band:hover {
+      background: #e9ecef;
+    }
+
+    .band.active {
+      background: #667eea;
+      color: white;
+      font-weight: 600;
+    }
+
+    /* Weather Summary */
+    .weather-summary {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+      color: #333;
+    }
+
+    .weather-updated {
+      color: #666;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Weather Table */
+    .weather-table-wrap {
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    th {
+      background: #667eea;
+      color: white;
+      padding: 0.75rem 0.5rem;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 0.75rem 0.5rem;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    tr:hover {
+      background: #f8f9fa;
+    }
+
+    .table-note {
+      color: #666;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+
+    /* Remove Button */
+    .remove-btn {
+      width: 100%;
+      background: #dc3545;
+      margin-top: 1rem;
+    }
+
+    .remove-btn:hover {
+      background: #c82333;
+    }
+
+    /* Error and Loading States */
+    .error {
+      color: #dc3545;
+      font-weight: 600;
+    }
+
+    .muted {
+      color: #666;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #666;
+    }
+
+    .empty-state::before {
+      content: "🏔️";
+      font-size: 4rem;
+      display: block;
+      margin-bottom: 1rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.75rem;
+      }
+
+      .search-container {
+        padding: 1.5rem;
+      }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .selector-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .selector-label {
+        min-width: auto;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Spanish Pyrenees — Mountain Weather</h1>
+  <!-- Header Section -->
+  <div class="header">
+    <h1>🏔️ Spanish Pyrenees Weather</h1>
+    <div class="subtitle">Real-time mountain weather forecasts for climbers and hikers</div>
+    
+    <!-- Search Container -->
+    <div class="search-container">
+      <!-- Global Search -->
+      <div class="global-search">
+        <div class="search-title">Quick Search</div>
+        <div class="search-input-group">
+          <input 
+            type="text" 
+            id="qGlobal" 
+            placeholder="Search any peak (e.g., 'Aneto', 'Perdido', 'Besiberri')..."
+          />
+          <button id="searchGlobal">Search</button>
+        </div>
+        <ul id="resultsGlobal" class="results-list"></ul>
+      </div>
 
-  <h3>Add peaks</h3>
-
-  <!-- Global search -->
-  <div style="margin-bottom:10px;">
-    <input id="qGlobal" placeholder="Search all peaks (e.g., 'aneto', 'perdido', 'besiberri')"/>
-    <button id="searchGlobal">Search</button>
+      <!-- Browse by Hierarchy -->
+      <div class="browse-section">
+        <div class="browse-title">Or browse by region</div>
+        <div class="selector-group">
+          <div class="selector-row">
+            <span class="selector-label">📍 Area:</span>
+            <select id="area">
+              <option value="">Select area...</option>
+            </select>
+          </div>
+          <div class="selector-row">
+            <span class="selector-label">⛰️ Massif:</span>
+            <select id="massif" disabled>
+              <option value="">Select massif...</option>
+            </select>
+          </div>
+        </div>
+        <ul id="resultsBrowse" class="results-list"></ul>
+      </div>
+    </div>
   </div>
 
-  <!-- Browse: Area -> Massif -> Peaks (auto lists peaks on massif select) -->
-  <div>
-    <select id="area"></select>
-    <select id="massif" disabled></select>
-    <ul id="results" class="list"></ul>
+  <!-- Main Content -->
+  <div class="container">
+    <div class="my-mountains-section">
+      <div class="section-header">
+        <h2>My Mountains</h2>
+      </div>
+      <div id="cards" class="cards-grid"></div>
+    </div>
   </div>
-
-  <h2>My Mountains</h2>
-  <div id="cards" class="row"></div>
 
   <script src="/static/app.js" defer></script>
-
 </body>
 </html>
