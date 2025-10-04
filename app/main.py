@@ -79,3 +79,112 @@ def peak_details(peak_id: str):
     if not p:
         raise HTTPException(404, "Unknown peak")
     return p
+
+# ---------- My Mountains (simple single-user list) ----------
+@app.get("/api/my/mountains")
+async def my_mountains(session=Depends(get_session)):
+    rows = (
+        await session.execute(
+            select(MyMountain).order_by(MyMountain.display_order, MyMountain.added_at)
+        )
+    ).scalars().all()
+    return [r.mountain_id for r in rows]
+
+@app.post("/api/my/mountains/{mountain_id}")
+async def add_mountain(mountain_id: str, session=Depends(get_session)):
+    if mountain_id not in PEAK_BY_ID:
+        raise HTTPException(404, "Unknown peak")
+    try:
+        await session.execute(insert(MyMountain).values(mountain_id=mountain_id))
+        await session.commit()
+        return {"ok": True}
+    except IntegrityError:
+        await session.rollback()
+        return {"ok": True, "note": "Already added"}
+
+@app.delete("/api/my/mountains/{mountain_id}")
+async def remove_mountain(mountain_id: str, session=Depends(get_session)):
+    await session.execute(delete(MyMountain).where(MyMountain.mountain_id == mountain_id))
+    await session.commit()
+    return {"ok": True}
+
+# ---------- Weather + cache ----------
+TTL_SECONDS = 3600  # 60 minutes
+
+def cache_fresh(row):
+    try:
+        if not row or row.fetched_at is None or row.ttl_seconds is None:
+            return False
+        age = (datetime.datetime.now(datetime.timezone.utc) - row.fetched_at).total_seconds()
+        return age < row.ttl_seconds
+    except Exception:
+        return False
+
+@app.get("/api/weather/{mountain_id}")
+async def weather_24h(mountain_id: str, band: str = "base", session=Depends(get_session)):
+    # Validate inputs
+    m = PEAK_BY_ID.get(mountain_id)
+    if not m:
+        raise HTTPException(404, "Unknown peak")
+    if band not in ("base", "mid", "summit"):
+        raise HTTPException(400, "band must be base|mid|summit")
+
+    b = m["bands"][band]
+
+    # 1) Cache check
+    row = (
+        await session.execute(
+            select(WeatherCache).where(
+                WeatherCache.mountain_id == mountain_id,
+                WeatherCache.band == band,
+            )
+        )
+    ).scalars().first()
+    if row and cache_fresh(row):
+        return row.payload
+
+    # 2) Fetch upstream safely
+    try:
+        payload = await fetch_hourly(b["lat"], b["lon"])
+        hourly = slice_next_24h(payload, elev_target_m=b["elev_m"])
+    except Exception as e:
+        # Don’t cache failures; surface a clear 502
+        raise HTTPException(status_code=502, detail=f"Upstream weather error: {e}")
+
+    # 3) Insert-or-update (portable, handles races)
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    try:
+        await session.execute(
+            insert(WeatherCache).values(
+                mountain_id=mountain_id,
+                band=band,
+                payload=hourly,
+                ttl_seconds=TTL_SECONDS,
+                fetched_at=now_utc,
+            )
+        )
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        await session.execute(
+            update(WeatherCache)
+            .where(
+                WeatherCache.mountain_id == mountain_id,
+                WeatherCache.band == band,
+            )
+            .values(payload=hourly, ttl_seconds=TTL_SECONDS, fetched_at=now_utc)
+        )
+        await session.commit()
+
+    return hourly
+
+# ---------- Static site (mounted AFTER APIs) ----------
+PUBLIC_DIR = pathlib.Path(__file__).resolve().parents[1] / "public"
+INDEX_PATH = PUBLIC_DIR / "index.html"
+
+@app.get("/", include_in_schema=False)
+def index():
+    return FileResponse(INDEX_PATH)
+
+app.mount("/static", StaticFiles(directory=str(PUBLIC_DIR)), name="static")
+
