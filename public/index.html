@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="/static/style.css">
+  <title>Pyrenees Mountain Weather</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    h1 { margin-bottom: 8px; }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; width: 340px; background: #fff; }
+    .band { display: inline-block; margin-right: 12px; cursor: pointer; }
+    .band.active { font-weight: 700; text-decoration: underline; }
+    .list { margin: 8px 0 0; padding: 0; list-style: none; }
+    .list li { margin: 4px 0; }
+    input, select, button { padding: 8px; margin-right: 6px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border-bottom: 1px solid #eee; padding: 6px 4px; text-align: left; }
+    .muted { color: #666; font-size: 13px; }
+    .pill { display:inline-block; padding: 2px 6px; border-radius: 999px; background:#f2f2f2; font-size:12px; }
+    .error { color: #b00020; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Spanish Pyrenees — Mountain Weather</h1>
+
+  <h3>Add peaks</h3>
+
+  <!-- Global search -->
+  <div style="margin-bottom:10px;">
+    <input id="qGlobal" placeholder="Search all peaks (e.g., 'aneto', 'perdido', 'besiberri')"/>
+    <button id="searchGlobal">Search</button>
+  </div>
+
+  <!-- Browse: Area -> Massif -> Peaks (auto lists peaks on massif select) -->
+  <div>
+    <select id="area"></select>
+    <select id="massif" disabled></select>
+    <ul id="results" class="list"></ul>
+  </div>
+
+  <h2>My Mountains</h2>
+  <div id="cards" class="row"></div>
+
+  <script src="/static/app.js" defer></script>
+
+</body>
+</html>
