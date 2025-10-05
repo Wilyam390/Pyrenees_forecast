@@ -158,9 +158,9 @@ function createMountainCard(id, mountain) {
     </div>
     
     <div class="elevation-badges">
-      <span class="badge">📍 Base: ${mountain.bands.base.elev_m} m</span>
-      <span class="badge">⛰️ Mid: ${mountain.bands.mid.elev_m} m</span>
-      <span class="badge">🏔️ Summit: ${mountain.bands.summit.elev_m} m</span>
+      <span class="badge"> Base: ${mountain.bands.base.elev_m} m</span>
+      <span class="badge"> Mid: ${mountain.bands.mid.elev_m} m</span>
+      <span class="badge"> Summit: ${mountain.bands.summit.elev_m} m</span>
     </div>
     
     <div class="band-selector">
@@ -176,7 +176,7 @@ function createMountainCard(id, mountain) {
     <div class="weather-table-wrap" data-tablewrap></div>
     
     <div class="card-actions">
-      <button class="advanced-btn" data-advanced>📊 Advanced Weather</button>
+      <button class="advanced-btn" data-advanced> Advanced Weather</button>
       <button class="remove-btn" data-remove>🗑️ Remove</button>
     </div>
   `;
@@ -346,19 +346,19 @@ function showAdvancedWeather(mountain, band, weatherData) {
     <!-- Statistics Cards -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">🌡️ Temperature Range</div>
+        <div class="stat-label"> Temperature Range</div>
         <div class="stat-value">${minTemp}° to ${maxTemp}°C</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">📊 Average Temp</div>
+        <div class="stat-label"> Average Temp</div>
         <div class="stat-value">${avgTemp}°C</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">💨 Max Wind</div>
+        <div class="stat-label"> Max Wind</div>
         <div class="stat-value">${maxWind} km/h</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">💧 Total Precipitation</div>
+        <div class="stat-label"> Total Precipitation</div>
         <div class="stat-value">${totalPrecip} mm</div>
       </div>
       ${snowHours > 0 ? `
@@ -371,7 +371,7 @@ function showAdvancedWeather(mountain, band, weatherData) {
     
     <!-- Temperature Chart -->
     <div class="chart-container">
-      <div class="chart-title">🌡️ Temperature (24 hours)</div>
+      <div class="chart-title"> Temperature (24 hours)</div>
       <div class="chart-wrapper">
         <canvas id="tempChart"></canvas>
       </div>
@@ -379,7 +379,7 @@ function showAdvancedWeather(mountain, band, weatherData) {
     
     <!-- Wind Chart -->
     <div class="chart-container">
-      <div class="chart-title">💨 Wind Speed & Gusts (24 hours)</div>
+      <div class="chart-title"> Wind Speed & Gusts (24 hours)</div>
       <div class="chart-wrapper">
         <canvas id="windChart"></canvas>
       </div>
@@ -387,7 +387,7 @@ function showAdvancedWeather(mountain, band, weatherData) {
     
     <!-- Precipitation Chart -->
     <div class="chart-container">
-      <div class="chart-title">💧 Precipitation (24 hours)</div>
+      <div class="chart-title"> Precipitation (24 hours)</div>
       <div class="chart-wrapper">
         <canvas id="precipChart"></canvas>
       </div>
@@ -395,7 +395,7 @@ function showAdvancedWeather(mountain, band, weatherData) {
     
     <!-- Detailed Hourly Table -->
     <div class="chart-container hourly-detail-table">
-      <div class="chart-title">📋 Complete 24-Hour Forecast</div>
+      <div class="chart-title"> Complete 24-Hour Forecast</div>
       <table>
         <thead>
           <tr>
