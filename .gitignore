@@ -2,5 +2,20 @@ __pycache__/
 *.pyc
 *.db
 venv/
+.venv/
 .env
 .DS_Store
+*.sqlite
+*.sqlite3
+
+# Environment variables and secrets
+.env
+.env.*
+.env.local
+*.pem
+*.key
+secrets/
+credentials.json
+
+# Azure
+.azure/
