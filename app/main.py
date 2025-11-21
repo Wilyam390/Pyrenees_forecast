@@ -1,4 +1,3 @@
-# app/main.py
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -80,7 +79,6 @@ def peak_details(peak_id: str):
         raise HTTPException(404, "Unknown peak")
     return p
 
-# ---------- My Mountains (simple single-user list) ----------
 @app.get("/api/my/mountains")
 async def my_mountains(session=Depends(get_session)):
     rows = (
@@ -108,7 +106,6 @@ async def remove_mountain(mountain_id: str, session=Depends(get_session)):
     await session.commit()
     return {"ok": True}
 
-# ---------- Weather + cache ----------
 TTL_SECONDS = 3600  # 60 minutes
 
 def cache_fresh(row):
@@ -122,7 +119,6 @@ def cache_fresh(row):
 
 @app.get("/api/weather/{mountain_id}")
 async def weather_24h(mountain_id: str, band: str = "base", session=Depends(get_session)):
-    # Validate inputs
     m = PEAK_BY_ID.get(mountain_id)
     if not m:
         raise HTTPException(404, "Unknown peak")
@@ -131,7 +127,6 @@ async def weather_24h(mountain_id: str, band: str = "base", session=Depends(get_
 
     b = m["bands"][band]
 
-    # 1) Cache check
     row = (
         await session.execute(
             select(WeatherCache).where(
@@ -143,15 +138,12 @@ async def weather_24h(mountain_id: str, band: str = "base", session=Depends(get_
     if row and cache_fresh(row):
         return row.payload
 
-    # 2) Fetch upstream safely
     try:
         payload = await fetch_hourly(b["lat"], b["lon"])
         hourly = slice_next_24h(payload, elev_target_m=b["elev_m"])
     except Exception as e:
-        # Don’t cache failures; surface a clear 502
         raise HTTPException(status_code=502, detail=f"Upstream weather error: {e}")
 
-    # 3) Insert-or-update (portable, handles races)
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     try:
         await session.execute(
