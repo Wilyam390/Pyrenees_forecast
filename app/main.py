@@ -1,22 +1,19 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
 from sqlalchemy import select, insert, delete, update
 from sqlalchemy.exc import IntegrityError
-
 from .db import engine, Base, get_session
 from .models import MyMountain, WeatherCache
 from .weather import fetch_hourly, slice_next_24h
 from .config import settings
-
+from datetime import datetime, timezone
+from typing import Dict, Any, Optional
 import json
 import pathlib
-import datetime
 
 app = FastAPI(title="Pyrenees Mountain Weather")
 
-# ---------- Load hierarchical catalog (Area -> Massif -> Peaks) ----------
 CATALOG_PATH = pathlib.Path(__file__).resolve().parents[0] / "catalog" / "spanish_pyrenees.json"
 with open(CATALOG_PATH, "r", encoding="utf-8") as f:
     RAW = json.load(f)
@@ -29,7 +26,6 @@ def iter_peaks():
             for peak in massif["peaks"]:
                 yield area, massif, peak
 
-# Flat lookup by peak id (used by /api/my/* and /api/weather/*)
 PEAK_BY_ID = {p["id"]: p for _, _, p in iter_peaks()}
 
 @app.on_event("startup")
@@ -37,7 +33,6 @@ async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-# ---------- Catalog drill-down & search ----------
 @app.get("/api/catalog/areas")
 def list_areas():
     return [{"id": a["id"], "name": a["name"]} for a in AREAS]
@@ -109,14 +104,46 @@ async def remove_mountain(mountain_id: str, session=Depends(get_session)):
 
 TTL_SECONDS = settings.WEATHER_CACHE_TTL
 
-def cache_fresh(row):
+def is_cache_fresh(row: Optional[WeatherCache]) -> bool:
     try:
         if not row or row.fetched_at is None or row.ttl_seconds is None:
             return False
-        age = (datetime.datetime.now(datetime.timezone.utc) - row.fetched_at).total_seconds()
+        age = (datetime.now(timezone.utc) - row.fetched_at).total_seconds()
         return age < row.ttl_seconds
     except Exception:
         return False
+
+async def fetch_and_process_weather(lat: float, lon: float, elev_m: int) -> list[Dict[str, Any]]:
+    try:
+        payload = await fetch_hourly(lat, lon)
+        return slice_next_24h(payload, elev_target_m=elev_m)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Upstream weather error: {e}")
+
+async def update_weather_cache(session, mountain_id: str, band: str, hourly_data: list[Dict[str, Any]]) -> None:
+    now_utc = datetime.now(timezone.utc)
+    try:
+        await session.execute(
+            insert(WeatherCache).values(
+                mountain_id=mountain_id,
+                band=band,
+                payload=hourly_data,
+                ttl_seconds=TTL_SECONDS,
+                fetched_at=now_utc,
+            )
+        )
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        await session.execute(
+            update(WeatherCache)
+            .where(
+                WeatherCache.mountain_id == mountain_id,
+                WeatherCache.band == band,
+            )
+            .values(payload=hourly_data, ttl_seconds=TTL_SECONDS, fetched_at=now_utc)
+        )
+        await session.commit()
 
 @app.get("/api/weather/{mountain_id}")
 async def weather_24h(mountain_id: str, band: str = "base", session=Depends(get_session)):
@@ -136,42 +163,15 @@ async def weather_24h(mountain_id: str, band: str = "base", session=Depends(get_
             )
         )
     ).scalars().first()
-    if row and cache_fresh(row):
+    
+    if row and is_cache_fresh(row):
         return row.payload
 
-    try:
-        payload = await fetch_hourly(b["lat"], b["lon"])
-        hourly = slice_next_24h(payload, elev_target_m=b["elev_m"])
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Upstream weather error: {e}")
+    hourly_data = await fetch_and_process_weather(b["lat"], b["lon"], b["elev_m"])
+    await update_weather_cache(session, mountain_id, band, hourly_data)
+    
+    return hourly_data
 
-    now_utc = datetime.datetime.now(datetime.timezone.utc)
-    try:
-        await session.execute(
-            insert(WeatherCache).values(
-                mountain_id=mountain_id,
-                band=band,
-                payload=hourly,
-                ttl_seconds=TTL_SECONDS,
-                fetched_at=now_utc,
-            )
-        )
-        await session.commit()
-    except IntegrityError:
-        await session.rollback()
-        await session.execute(
-            update(WeatherCache)
-            .where(
-                WeatherCache.mountain_id == mountain_id,
-                WeatherCache.band == band,
-            )
-            .values(payload=hourly, ttl_seconds=TTL_SECONDS, fetched_at=now_utc)
-        )
-        await session.commit()
-
-    return hourly
-
-# ---------- Static site (mounted AFTER APIs) ----------
 PUBLIC_DIR = pathlib.Path(__file__).resolve().parents[1] / "public"
 INDEX_PATH = PUBLIC_DIR / "index.html"
 
@@ -180,4 +180,3 @@ def index():
     return FileResponse(INDEX_PATH)
 
 app.mount("/static", StaticFiles(directory=str(PUBLIC_DIR)), name="static")
-
