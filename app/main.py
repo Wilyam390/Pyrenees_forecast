@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from .db import engine, Base, get_session
 from .models import MyMountain, WeatherCache
 from .weather import fetch_hourly, slice_next_24h
+from .config import settings
 
 import json
 import pathlib
@@ -106,7 +107,7 @@ async def remove_mountain(mountain_id: str, session=Depends(get_session)):
     await session.commit()
     return {"ok": True}
 
-TTL_SECONDS = 3600  # 60 minutes
+TTL_SECONDS = settings.WEATHER_CACHE_TTL
 
 def cache_fresh(row):
     try:

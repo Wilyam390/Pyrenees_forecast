@@ -1,9 +1,10 @@
 # app/weather.py
 import httpx
 import asyncio
+from .config import settings
 
 LAPSE_RATE_K_PER_M = 0.0065
-_SEM = asyncio.Semaphore(4)
+_SEM = asyncio.Semaphore(settings.MAX_CONCURRENT_WEATHER_REQUESTS)
 
 async def fetch_hourly(lat: float, lon: float):
     """
@@ -18,8 +19,8 @@ async def fetch_hourly(lat: float, lon: float):
         "forecast_hours": 24,
     }
     async with _SEM:
-        async with httpx.AsyncClient(timeout=20) as client:
-            r = await client.get("https://api.open-meteo.com/v1/forecast", params=params)
+        async with httpx.AsyncClient(timeout=settings.WEATHER_API_TIMEOUT) as client:
+            r = await client.get(settings.WEATHER_API_URL, params=params)
             r.raise_for_status()
             return r.json()
 

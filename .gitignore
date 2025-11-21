@@ -17,5 +17,4 @@ venv/
 secrets/
 credentials.json
 
-# Azure
 .azure/
