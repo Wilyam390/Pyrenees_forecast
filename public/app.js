@@ -127,7 +127,7 @@ async function loadMy() {
     if (mine.length === 0) {
       cardsContainer.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state-icon">🏔️</div>
+          <div class="empty-state-icon"></div>
           <div class="empty-state-text">No mountains added yet</div>
           <div class="empty-state-hint">Search for a peak above to get started!</div>
         </div>
@@ -177,7 +177,7 @@ function createMountainCard(id, mountain) {
     
     <div class="card-actions">
       <button class="advanced-btn" data-advanced> Advanced Weather</button>
-      <button class="remove-btn" data-remove>🗑️ Remove</button>
+      <button class="remove-btn" data-remove> Remove</button>
     </div>
   `;
   
@@ -208,14 +208,14 @@ function createMountainCard(id, mountain) {
     currentWeatherData = weatherData;
     
     const first = weatherData[0];
-    const snowIcon = first.snow_likely ? ' ❄️' : '';
+    const snowIcon = first.snow_likely ? '(snow)' : '';
     
     summaryEl.innerHTML = `
       <div class="current-weather">
-        🌡️ ${first.temp_c}°C • 💨 ${first.wind_speed_kmh} km/h${first.wind_gust_kmh ? ` (gusts ${first.wind_gust_kmh})` : ''}
+         ${first.temp_c}°C •  ${first.wind_speed_kmh} km/h${first.wind_gust_kmh ? ` (gusts ${first.wind_gust_kmh})` : ''}
       </div>
       <div class="weather-meta">
-        💧 ${first.precip_mm} mm${snowIcon} • Updated ${new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})} • TZ: Europe/Madrid
+         ${first.precip_mm} mm${snowIcon} • Updated ${new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})} • TZ: Europe/Madrid
       </div>
     `;
     
@@ -235,7 +235,7 @@ function createMountainCard(id, mountain) {
     
     for (const row of weatherData.slice(0, 8)) {
       const hhmm = row.time.slice(11, 16);
-      const snowIcon = row.snow_likely ? ' ❄️' : '';
+      const snowIcon = row.snow_likely ? '' : '';
       
       tableHTML += `
         <tr>
@@ -363,7 +363,7 @@ function showAdvancedWeather(mountain, band, weatherData) {
       </div>
       ${snowHours > 0 ? `
       <div class="stat-card">
-        <div class="stat-label">❄️ Snow Likely</div>
+        <div class="stat-label"> Snow Likely</div>
         <div class="stat-value">${snowHours} hours</div>
       </div>
       ` : ''}
@@ -414,7 +414,7 @@ function showAdvancedWeather(mountain, band, weatherData) {
           ${weatherData.map(d => `
             <tr>
               <td><strong>${d.time.slice(11, 16)}</strong></td>
-              <td>${d.weather_description}${d.snow_likely ? ' ❄️' : ''}</td>
+              <td>${d.weather_description}${d.snow_likely ? '' : ''}</td>
               <td>${d.temp_c}°C</td>
               <td>${d.wind_speed_kmh ?? '-'} km/h</td>
               <td>${d.wind_direction}</td>
