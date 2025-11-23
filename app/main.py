@@ -172,6 +172,14 @@ async def weather_24h(mountain_id: str, band: str = "base", session=Depends(get_
     
     return hourly_data
 
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "Pyrenees Mountain Weather",
+        "version": "1.0.0"
+    }
+
 PUBLIC_DIR = pathlib.Path(__file__).resolve().parents[1] / "public"
 INDEX_PATH = PUBLIC_DIR / "index.html"
 
