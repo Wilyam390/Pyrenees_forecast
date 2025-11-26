@@ -12,6 +12,7 @@ from typing import Dict, Any, Optional
 import json
 import pathlib
 
+
 app = FastAPI(title="Pyrenees Mountain Weather")
 
 CATALOG_PATH = pathlib.Path(__file__).resolve().parents[0] / "catalog" / "spanish_pyrenees.json"
@@ -32,6 +33,7 @@ PEAK_BY_ID = {p["id"]: p for _, _, p in iter_peaks()}
 async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
 
 @app.get("/api/catalog/areas")
 def list_areas():
