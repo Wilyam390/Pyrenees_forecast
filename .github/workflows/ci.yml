@@ -57,5 +57,5 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'pyrenees-forecast-wyammine'  # Your web app name
+          app-name: 'Pyrenees-forecast'
           images: ${{ secrets.DOCKER_USERNAME }}/pyrenees-forecast:${{ github.sha }}
