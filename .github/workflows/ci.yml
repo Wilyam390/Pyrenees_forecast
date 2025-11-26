@@ -25,8 +25,8 @@ jobs:
       
       - name: Run tests with coverage
         run: |
-          coverage run -m pytest
-          coverage report --fail-under=70
+          python -m pytest --cov=app --cov-report=term-missing
+          python -m coverage report --fail-under=70
 
   build-and-deploy:
     needs: test
