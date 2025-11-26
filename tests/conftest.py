@@ -1,40 +1,41 @@
+"""
+Test configuration and fixtures.
+"""
 import pytest
-import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from httpx import AsyncClient, ASGITransport
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from app.db import Base, get_session
 from app.main import app
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+TEST_DATABASE_URL = "sqlite:///:memory:"
 
-@pytest_asyncio.fixture
-async def test_db():
-    """Create a fresh database for each test"""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-    
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    
-    async_session = async_sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
+@pytest.fixture(scope="function", autouse=True)
+def setup_test_database():
+    """
+    Create a fresh test database for each test function.
+    This fixture runs automatically for all tests.
+    """
+    engine = create_engine(
+        TEST_DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
     
-    yield async_session
+    Base.metadata.create_all(bind=engine)
     
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
-
-@pytest_asyncio.fixture
-async def client(test_db):
-    """Create a test client with database override"""
-    async def override_get_session():
-        async with test_db() as session:
-            yield session
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    
+    def override_get_session():
+        try:
+            db = TestingSessionLocal()
+            yield db
+        finally:
+            db.close()
     
     app.dependency_overrides[get_session] = override_get_session
     
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
-    
+    yield
+
+    Base.metadata.drop_all(bind=engine)
     app.dependency_overrides.clear()
