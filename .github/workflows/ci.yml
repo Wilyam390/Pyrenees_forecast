@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -9,7 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v4
       
@@ -28,6 +27,35 @@ jobs:
         run: |
           coverage run -m pytest
           coverage report --fail-under=70
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - uses: actions/checkout@v4
       
-      - name: Build Docker image
-        run: docker build -t pyrenees-forecast:latest .
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/pyrenees-forecast:${{ github.sha }} .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/pyrenees-forecast:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/pyrenees-forecast:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/pyrenees-forecast:latest
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'pyrenees-forecast-wyammine'  # Your web app name
+          images: ${{ secrets.DOCKER_USERNAME }}/pyrenees-forecast:${{ github.sha }}
