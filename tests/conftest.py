@@ -2,40 +2,51 @@
 Test configuration and fixtures.
 """
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import asyncio
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 from app.db import Base, get_session
 from app.main import app
 
-TEST_DATABASE_URL = "sqlite:///:memory:"
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest.fixture(scope="function", autouse=True)
-def setup_test_database():
+async def setup_test_database():
     """
-    Create a fresh test database for each test function.
+    Create a fresh async test database for each test function.
     This fixture runs automatically for all tests.
     """
-    engine = create_engine(
+    engine = create_async_engine(
         TEST_DATABASE_URL,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
+        echo=False,
     )
     
-    Base.metadata.create_all(bind=engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    TestingSessionLocal = async_sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
     
-    def override_get_session():
-        try:
-            db = TestingSessionLocal()
-            yield db
-        finally:
-            db.close()
+    async def override_get_session():
+        async with TestingSessionLocal() as session:
+            yield session
     
     app.dependency_overrides[get_session] = override_get_session
     
     yield
-
-    Base.metadata.drop_all(bind=engine)
+    
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
+    
     app.dependency_overrides.clear()
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for the test session."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
