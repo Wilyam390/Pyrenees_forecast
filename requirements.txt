@@ -16,6 +16,7 @@ iniconfig==2.3.0
 packaging==25.0
 pluggy==1.6.0
 pydantic==2.12.4
+pydantic-settings==2.1.0
 pydantic_core==2.41.5
 Pygments==2.19.2
 pytest==8.4.2
@@ -30,5 +31,5 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.24.0
 uvloop==0.22.1
-watchfiles==1.1.1
+watchfiles==1.11.1
 websockets==15.0.1
