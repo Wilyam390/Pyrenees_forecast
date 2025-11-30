@@ -1,24 +1,29 @@
 """
-Database configuration and session management.
-
-Provides async SQLAlchemy engine and session factory for SQLite database.
+Database connection and session management.
 """
-from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 from .config import settings
 
-engine = create_async_engine(settings.DATABASE_URL, future=True, echo=False)
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
-Base = declarative_base()
+class Base(DeclarativeBase):
+    """Base class for all database models."""
+    pass
 
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=settings.DEBUG,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+)
 
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """
-    Dependency that provides database session to FastAPI routes.
-    
-    Yields:
-        AsyncSession: Database session that auto-closes after use
-    """
-    async with AsyncSessionLocal() as session:
+async_session = async_sessionmaker(
+    engine, 
+    class_=AsyncSession, 
+    expire_on_commit=False
+)
+
+async def get_session():
+    """Dependency for getting database sessions."""
+    async with async_session() as session:
         yield session
