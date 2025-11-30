@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     
     DEBUG: bool = False
 
+    MAX_CONCURRENT_WEATHER_REQUESTS: int = 10
+
     class Config:
         env_file = ".env"
         case_sensitive = True
